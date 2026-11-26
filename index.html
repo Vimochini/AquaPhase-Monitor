@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Clausius-Clapeyron Law — Experimental Verification</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+  <style>
+    :root {
+      --bg: #0a0f1c;
+      --card: #111827;
+      --panel: #0d1324;
+      --primary: #00f5ff;
+      --secondary: #00ff95;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+      --border: rgba(0, 255, 255, 0.2);
+      --radius: 14px;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+    body { background: var(--bg); color: var(--text); line-height: 1.7; }
+
+    header {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: #05101a;
+      text-align: center;
+      padding: 3rem 1rem 2.5rem;
+    }
+    header h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; }
+    header .subtitle { font-size: 1.1rem; margin-top: .4rem; opacity: .85; }
+    header .authors { font-style: italic; margin-top: 1rem; opacity: .75; }
+
+    nav {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.2rem;
+      padding: .8rem 1rem;
+    }
+    nav a { color: var(--primary); text-decoration: none; font-weight: 600; font-size: .95rem; }
+    nav a:hover { color: var(--secondary); }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 2rem 1.2rem 3rem; }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 22px rgba(0, 255, 200, 0.08);
+    }
+    section h2 {
+      color: var(--primary);
+      font-size: 1.7rem;
+      margin-bottom: 1.2rem;
+      padding-bottom: .4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section h3 { color: var(--secondary); font-size: 1.15rem; margin: 1.6rem 0 .6rem; }
+    p, li { color: var(--muted); margin-bottom: .9rem; }
+    ul { padding-left: 1.4rem; margin-bottom: .9rem; }
+    li { margin-bottom: .4rem; }
+    strong { color: var(--text); }
+
+    figure { margin: 1.4rem auto; text-align: center; }
+    figure img, figure video {
+      max-width: 100%; height: auto; border-radius: 10px;
+      background: #fff;
+    }
+    figcaption { color: var(--muted); font-size: .9rem; margin-top: .5rem; font-style: italic; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: center; }
+    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .equation {
+      background: #0b1020; border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem; text-align: center; margin: 1rem 0;
+    }
+    .equation img { max-width: 100%; height: auto; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1.2rem 0; }
+    .stat {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem; text-align: center;
+    }
+    .stat .value { color: var(--secondary); font-size: 1.5rem; font-weight: 700; }
+    .stat .label { color: var(--muted); font-size: .85rem; }
+
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: var(--panel);
+      padding: 1rem 1.2rem;
+      border-radius: 6px;
+      margin: 1.2rem 0;
+    }
+
+    .chart-wrap { position: relative; height: 420px; background: var(--panel); border-radius: 10px; padding: 1rem; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .92rem; }
+    th, td { border-bottom: 1px solid var(--border); padding: .5rem .7rem; text-align: right; }
+    th { color: var(--primary); font-weight: 600; }
+    td:first-child, th:first-child { text-align: left; }
+    tbody tr:hover { background: rgba(0, 255, 200, 0.05); }
+
+    video { width: 100%; max-width: 640px; border-radius: 10px; }
+    pre.code { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; overflow-x: auto; white-space: pre; font-size: .82rem; line-height: 1.5; color: var(--text); margin-bottom: 1.2rem; }
+    pre.code code { font-family: Consolas, "Roboto Mono", monospace; white-space: pre; }
+
+    footer {
+      text-align: center; color: var(--muted); font-size: .9rem;
+      padding: 1.5rem 1rem; background: var(--panel); border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 760px) {
+      .two-col, .gallery { grid-template-columns: 1fr; }
+      section { padding: 1.3rem; }
+      .chart-wrap { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>The Clausius-Clapeyron Law</h1>
+  <div class="subtitle">Experimental verification with a low-cost ESP32 + BMP280 setup</div>
+  <div class="authors">Vimochini</div>
+</header>
+
+<nav>
+  <a href="#abstract">Abstract</a>
+  <a href="#theory">Theory</a>
+  <a href="#setup">Setup</a>
+  <a href="#results">Results</a>
+  <a href="#model">Model</a>
+  <a href="#limitations">Limitations</a>
+  <a href="#conclusion">Conclusion</a>
+  <a href="#future">Future Scope</a>
+</nav>
+
+<main>
+
+  <!-- ABSTRACT -->
+  <section id="abstract">
+    <h2>Abstract</h2>
+    <div class="two-col">
+      <div>
+        <p>
+          Boiling is a fundamental phase transition governed by temperature and pressure (standard pressure 1013 hPa).
+          The Clausius–Clapeyron relation gives a thermodynamic description of how the vapor pressure of a liquid
+          changes with temperature during phase transitions such as boiling or condensation.
+        </p>
+        <p>
+          This work tests the relation for water with a low-cost Internet of Things (IoT) setup. An airtight steamer
+          acts as a controlled chamber, with a BMP280 sensor mounted under the lid to measure temperature and pressure.
+          An ESP32 microcontroller logs the readings while the water is heated, and the data are checked for the
+          expected ln(P) versus 1/T linear form.
+        </p>
+        <p>
+          The work shows how a classical 19th-century law can be examined with simple, modern tools, and how
+          affordable hardware can support meaningful experiments in education and engineering.
+        </p>
+      </div>
+      <figure>
+        <img src="assets/images/boiling-point.jpg" alt="Boiling point" width="500">
+        <figcaption>Boiling of water, the phenomenon under study.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Research Gap and Objectives</h3>
+    <p>
+      Existing studies rarely combine low-cost IoT systems with scientific rigor, real-time monitoring and clear
+      visualization. This research aims to:
+    </p>
+    <ul>
+      <li>Design and build an ESP32–BMP280 sensor system in an airtight container for temperature and pressure measurement.</li>
+      <li>Develop a web-based platform for data acquisition, visualization and analysis.</li>
+      <li>Test the Clausius–Clapeyron relation for water over a defined temperature range.</li>
+      <li>Compare experimental results with theoretical predictions and assess data quality.</li>
+    </ul>
+  </section>
+
+  <!-- THEORY -->
+  <section id="theory">
+    <h2>Theoretical Framework</h2>
+
+    <h3>Statement</h3>
+    <p>
+      “The rate of change of the pressure of a saturated vapor with temperature is proportional to the latent heat of
+      the phase transition and inversely proportional to the product of temperature and the change in specific volume
+      of the two phases.”
+    </p>
+
+    <h3>Derivation</h3>
+    <p>
+      The relation describes how pressure and temperature are linked at a phase boundary, such as liquid–gas. It lets
+      the latent heat of a transition be calculated from measurable quantities. The derivation starts from the Gibbs
+      free energy <em>G</em>: for a system at constant temperature and pressure, two phases (e.g. liquid and vapor)
+      are in equilibrium when their Gibbs free energies are equal.
+    </p>
+    <figure>
+      <img src="assets/images/derivation.jpeg" alt="Clausius–Clapeyron derivation" width="800">
+      <figcaption>Derivation of the Clausius–Clapeyron equation.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SETUP -->
+  <section id="setup">
+    <h2>Experimental Setup</h2>
+
+    <h3>Aim</h3>
+    <p>
+      Clausius and Clapeyron aimed to understand how vapor pressure changes with temperature and to use that
+      change to calculate the latent heat of vaporization.
+    </p>
+
+    <h3>Hardware</h3>
+    <p>
+      The core hardware is an ESP32-WROOM-32 microcontroller and a BMP280 sensor, which measures both temperature and
+      pressure. The two are connected over I²C (SDA on GPIO 21, SCL on GPIO 22) with a shared 3.3 V supply and ground.
+      The BMP280 is mounted on the underside of the airtight steamer lid. A small hole in the lid lets the wires pass
+      through without letting steam escape.
+    </p>
+    <figure>
+      <img src="assets/images/v.jpg" alt="ESP32 to BMP280 wiring" width="640">
+      <figcaption>ESP32 to BMP280 wiring (3.3 V, GND, SCL = GPIO 22, SDA = GPIO 21).</figcaption>
+    </figure>
+
+    <h3>Assembly</h3>
+    <div class="gallery">
+      <figure>
+        <img src="assets/images/close-view.jpeg" alt="Close view of sensor mount">
+        <figcaption>Close view: sensor mounted inside the lid.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/images/full-view.jpeg" alt="Full view of setup">
+        <figcaption>Full view of the assembled steamer.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Procedure</h3>
+    <p>
+      Water is heated gradually inside the sealed steamer. As it boils, steam accumulates and raises the pressure in
+      the container. The BMP280 records temperature and pressure continuously. The ESP32 timestamps each reading,
+      stores it as CSV and serves the file over Wi-Fi for download and live monitoring. Readings from steady boiling
+      periods are used for analysis.
+    </p>
+
+    <h3>Firmware</h3>
+    <p>
+      The ESP32 logger (<code>firmware/esp32_bmp280_logger.ino</code>) reads the BMP280 every 10 seconds, timestamps
+      each reading via NTP (GMT+5:30), appends it to <code>bmp280.csv</code> on SPIFFS, and serves the file at
+      <code>/bmp280.csv</code>. Wi-Fi credentials are replaced with placeholders.
+    </p>
+    <pre class="code"><code>#include &lt;Wire.h&gt;
+#include &lt;Adafruit_BMP280.h&gt;
+#include &lt;FS.h&gt;
+#include &lt;SPIFFS.h&gt;
+#include &lt;WiFi.h&gt;
+#include "time.h"
+#include &lt;WebServer.h&gt;  // built-in ESP32 library
+
+Adafruit_BMP280 bmp;  // I2C interface
+
+// Replace with your WiFi credentials (kept out of the repository)
+const char* ssid     = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+// NTP server and offset
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 19800; // GMT+5:30 (India)
+const int daylightOffset_sec = 0;
+
+// Web server on port 80
+WebServer server(80);
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  // Mount SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println(" SPIFFS Mount Failed!");
+    while (1);
+  }
+  Serial.println(" SPIFFS Mounted.");
+
+  // Connect WiFi
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\n WiFi connected.");
+  Serial.print("ESP32 IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // Init time via NTP
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  Serial.println("Time synchronized via NTP.");
+
+  // Initialize I2C explicitly
+  Wire.begin(21, 22);
+
+  // Initialize BMP280
+  if (!bmp.begin(0x76)) {
+    Serial.println(" BMP280 not found. Check wiring!");
+    while (1);
+  }
+  Serial.println("BMP280 detected!");
+
+  // Create CSV if it doesn't exist
+  if (!SPIFFS.exists("/bmp280.csv")) {
+    File file = SPIFFS.open("/bmp280.csv", FILE_WRITE);
+    if (file) {
+      file.println("timestamp,temperature_C,pressure_hPa");
+      file.close();
+      Serial.println(" Created bmp280.csv with header.");
+    } else {
+      Serial.println("Failed to create file.");
+    }
+  }
+
+  // Setup web server route
+  server.on("/bmp280.csv", HTTP_GET, []() {
+    File file = SPIFFS.open("/bmp280.csv", "r");
+    if (!file) {
+      server.send(404, "text/plain", "File not found");
+      return;
+    }
+
+    // Tell browser this is a CSV file for download
+    server.streamFile(file, "text/csv");
+    file.close();
+  });
+
+  server.begin();
+  Serial.println("Web server started. Access file at: http://" + WiFi.localIP().toString() + "/bmp280.csv");
+}
+
+void loop() {
+  // Handle web requests
+  server.handleClient();
+
+  // Read sensor values
+  float t = bmp.readTemperature();
+  float p = bmp.readPressure() / 100.0F;
+
+  // Get formatted time
+  struct tm timeinfo;
+  if (!getLocalTime(&amp;timeinfo)) {
+    Serial.println("Failed to obtain time");
+    delay(10000);
+    return;
+  }
+
+  char timeString[30];
+  strftime(timeString, sizeof(timeString), "%Y-%m-%d %H:%M:%S", &amp;timeinfo);
+
+  // Append to CSV
+  File file = SPIFFS.open("/bmp280.csv", FILE_APPEND);
+  if (file) {
+    file.printf("%s,%.2f,%.2f\n", timeString, t, p);
+    file.close();
+    Serial.printf("Logged -&gt; %s | T: %.2f C | P: %.2f hPa\n", timeString, t, p);
+  } else {
+    Serial.println(" Failed to open bmp280.csv for writing!");
+  }
+
+  delay(10000); // log every 10 seconds
+}
+</code></pre>
+
+    <h3>Sample Serial Log</h3>
+    <p>Format of the lines printed on each logging cycle, taken from the first readings in <code>bmp280_data.csv</code>:</p>
+    <pre class="code"><code>Logged -> 2025-08-31 17:29:00 | T: 50.11 C | P: 1010.74 hPa
+Logged -> 2025-08-31 17:29:10 | T: 57.87 C | P: 1020.42 hPa
+Logged -> 2025-08-31 17:29:20 | T: 65.93 C | P: 1029.56 hPa
+Logged -> 2025-08-31 17:29:30 | T: 73.43 C | P: 1040.00 hPa</code></pre>
+
+    <h3>Demonstration</h3>
+    <figure>
+      <video src="assets/video/clip.mp4" poster="assets/video/poster.png" controls preload="auto" playsinline>
+        Your browser cannot play this video. <a href="assets/video/clip.mp4">Download the clip</a>.
+      </video>
+      <figcaption>Video: the experiment in operation.</figcaption>
+    </figure>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results">
+    <h2>Data and Results</h2>
+    <p>
+      The table and plot below use the logged dataset <code>data/bmp280_data.csv</code>: 10 readings taken during
+      heating, from 50.11 °C to 119.56 °C. Pressure is converted to Pa and temperature to kelvin. The linear fit is
+      ln(P) = a + b·(1/T).
+    </p>
+
+    <div class="stats">
+      <div class="stat"><div class="value" id="stat-slope">–</div><div class="label">Fitted slope b (K)</div></div>
+      <div class="stat"><div class="value" id="stat-r2">–</div><div class="label">Coefficient of determination R²</div></div>
+      <div class="stat"><div class="value" id="stat-lh">–</div><div class="label">Latent heat from fit (kJ/mol)</div></div>
+      <div class="stat"><div class="value">≈ 40.7</div><div class="label">Reference ΔH<sub>vap</sub> of water at 100 °C (kJ/mol)</div></div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="lnp-chart"></canvas>
+    </div>
+    <figcaption style="text-align:center;margin-top:.5rem;">ln(P) versus 1/T, with the least-squares line.</figcaption>
+
+    <h3>Measured Readings</h3>
+    <table>
+      <thead>
+        <tr><th>Timestamp</th><th>T (°C)</th><th>P (hPa)</th><th>1/T (K⁻¹)</th><th>ln(P / Pa)</th></tr>
+      </thead>
+      <tbody id="data-body"></tbody>
+    </table>
+
+    <h3>Interpretation</h3>
+    <div class="callout" id="interpretation"></div>
+  </section>
+
+  <!-- MODEL -->
+  <section id="model">
+    <h2>Mathematical Model</h2>
+    <p>The Clausius–Clapeyron equation in logarithmic form is:</p>
+    <div class="equation">
+      <img src="assets/images/equation.jpeg" alt="ln P = −ΔH_vap/R · 1/T + C" width="530">
+    </div>
+    <p>where</p>
+    <ul>
+      <li><em>P</em> is the vapor pressure</li>
+      <li><em>T</em> is the absolute temperature (K)</li>
+      <li><em>ΔH<sub>vap</sub></em> is the latent heat of vaporization</li>
+      <li><em>R</em> is the universal gas constant (8.314 J/(mol·K))</li>
+      <li><em>C</em> is an integration constant</li>
+    </ul>
+    <p>
+      Plotting ln(P) against 1/T should give a straight line with slope −ΔH<sub>vap</sub>/R. The latent heat is
+      therefore ΔH<sub>vap</sub> = −b·R, where b is the fitted slope.
+    </p>
+  </section>
+
+  <!-- LIMITATIONS -->
+  <section id="limitations">
+    <h2>Assumptions and Limitations</h2>
+    <h3>Assumptions of the relation</h3>
+    <ul>
+      <li>The process is slow enough that liquid and vapor stay in equilibrium.</li>
+      <li>The latent heat stays roughly constant over the temperature range studied.</li>
+      <li>The liquid volume is much smaller than the vapor volume and can be neglected.</li>
+      <li>The steam behaves as an ideal gas.</li>
+    </ul>
+    <h3>Practical limitations</h3>
+    <ul>
+      <li>Temperature and pressure must be uniform inside the steamer; uneven steam affects readings.</li>
+      <li>The BMP280 is specified at about ±1 °C and ±1 hPa. This resolves the trend but limits precision.</li>
+      <li>Readings were averaged during steady boiling to reduce noise.</li>
+      <li>The sensor reads the total pressure in the container, not the vapor pressure alone. Air present in the steamer adds to the reading.</li>
+    </ul>
+  </section>
+
+  <!-- CONCLUSION -->
+  <section id="conclusion">
+    <h2>Conclusion</h2>
+    <p>
+      Pressure and temperature readings were logged with an ESP32 and BMP280 during heating of water in an airtight
+      steamer. Over the measured range, ln(P) follows a straight line against 1/T (R² ≈ 0.997), which matches the
+      qualitative form of the Clausius–Clapeyron relation.
+    </p>
+    <p>
+      The slope from this dataset gives a latent heat far below the accepted value for water (about 40.7 kJ/mol).
+      This means the present data confirm the linear trend but do not yet verify the magnitude of the latent heat.
+      The likely causes are that the sensor reads total pressure including air, and that the temperature range is
+      narrow. Further runs with a wider range, and with a separate reference for the air contribution, are needed for a
+      quantitative test.
+    </p>
+    <p>
+      The work still shows that low-cost IoT hardware can capture the main behavior of a classical thermodynamic law
+      and make it interactive for teaching.
+    </p>
+  </section>
+
+  <!-- FUTURE -->
+  <section id="future">
+    <h2>Future Scope</h2>
+    <ul>
+      <li><strong>Science education:</strong> turns abstract thermodynamics into hands-on work. Students can build, code and analyze the experiment.</li>
+      <li><strong>Citizen science:</strong> low-cost, portable setups allow local monitoring of temperature, pressure and humidity.</li>
+      <li><strong>Remote monitoring:</strong> the system can be adapted to agricultural, industrial or atmospheric use, with web-based access from hard-to-reach sites.</li>
+    </ul>
+    <p>
+      The approach links classical experiments with modern IoT and web tools, offering a reproducible and accessible
+      model for low-cost automated experimentation.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  © <span id="year"></span> The Clausius-Clapeyron Law project. All rights reserved.
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Logged readings from data/bmp280_data.csv
+  const READINGS = [
+    { ts: "2025-08-31 17:29:00", t: 50.11,  p: 1010.74 },
+    { ts: "2025-08-31 17:29:10", t: 57.87,  p: 1020.42 },
+    { ts: "2025-08-31 17:29:20", t: 65.93,  p: 1029.56 },
+    { ts: "2025-08-31 17:29:30", t: 73.43,  p: 1040.00 },
+    { ts: "2025-08-31 17:29:40", t: 80.76,  p: 1049.63 },
+    { ts: "2025-08-31 17:29:50", t: 88.47,  p: 1060.42 },
+    { ts: "2025-08-31 17:30:00", t: 96.75,  p: 1070.23 },
+    { ts: "2025-08-31 17:30:10", t: 104.56, p: 1080.65 },
+    { ts: "2025-08-31 17:30:20", t: 112.10, p: 1089.20 },
+    { ts: "2025-08-31 17:30:30", t: 119.56, p: 1100.55 }
+  ];
+  const R = 8.314; // J/(mol·K)
+
+  const points = READINGS.map(r => {
+    const T = r.t + 273.15;         // K
+    const P = r.p * 100;            // Pa
+    return { x: 1 / T, y: Math.log(P) };
+  });
+
+  // Least-squares fit y = a + b x
+  const n = points.length;
+  const mx = points.reduce((s, q) => s + q.x, 0) / n;
+  const my = points.reduce((s, q) => s + q.y, 0) / n;
+  const b = points.reduce((s, q) => s + (q.x - mx) * (q.y - my), 0)
+          / points.reduce((s, q) => s + (q.x - mx) ** 2, 0);
+  const a = my - b * mx;
+  const ssRes = points.reduce((s, q) => s + (q.y - (a + b * q.x)) ** 2, 0);
+  const ssTot = points.reduce((s, q) => s + (q.y - my) ** 2, 0);
+  const r2 = 1 - ssRes / ssTot;
+  const latentKJ = -b * R / 1000;
+
+  document.getElementById('stat-slope').textContent = b.toFixed(1);
+  document.getElementById('stat-r2').textContent = r2.toFixed(4);
+  document.getElementById('stat-lh').textContent = latentKJ.toFixed(2);
+
+  document.getElementById('interpretation').innerHTML =
+    `The points follow a straight line (R² = ${r2.toFixed(3)}), so the qualitative trend of the ` +
+    `Clausius–Clapeyron relation is present. The fitted latent heat is ${latentKJ.toFixed(2)} kJ/mol, ` +
+    `about 30 times smaller than the reference value of ≈ 40.7 kJ/mol. The sensor records total pressure ` +
+    `(including air) over a narrow range, so this dataset confirms the trend but not the magnitude of ΔH<sub>vap</sub>.`;
+
+  // Table
+  const tbody = document.getElementById('data-body');
+  READINGS.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td>${r.ts}</td><td>${r.t.toFixed(2)}</td><td>${r.p.toFixed(2)}</td>` +
+      `<td>${points[i].x.toExponential(4)}</td><td>${points[i].y.toFixed(4)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Chart
+  const fitLine = [points[0].x, points[n - 1].x].map(x => ({ x, y: a + b * x }));
+  new Chart(document.getElementById('lnp-chart'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Measured ln(P)',
+          data: points,
+          backgroundColor: '#00f5ff',
+          borderColor: '#00f5ff',
+          pointRadius: 5,
+          showLine: false
+        },
+        {
+          label: 'Linear fit',
+          data: fitLine,
+          type: 'line',
+          borderColor: '#00ff95',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      legend: { labels: { fontColor: '#e6edf3' } },
+      scales: {
+        xAxes: [{
+          type: 'linear',
+          scaleLabel: { display: true, labelString: '1/T (K⁻¹)', fontColor: '#9aa4b2' },
+          ticks: { fontColor: '#9aa4b2', callback: v => v.toExponential(2) },
+          gridLines: { color: 'rgba(255,255,255,0.08)' }
+        }],
+        yAxes: [{
+          scaleLabel: { display: true, labelString: 'ln(P / Pa)', fontColor: '#9aa4b2' },
+          ticks: { fontColor: '#9aa4b2' },
+          gridLines: { color: 'rgba(255,255,255,0.08)' }
+        }]
+      }
+    }
+  });
+</script>
+</body>
+</html>
